@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from authenticate.permissions import IsMerchant, IsOwner, CustomUserJWTAuthentication
 from cart.models import Order
+from cart.api.v1.serializers import MerchantOrderSerializer, OrderStatusUpdateSerializer
 from config.client.mail_engine import EmailEngine
 from product.api.v1.core.paginations import StandardResultsSetPagination
 from product.models import Product, Color, Size
@@ -16,7 +17,6 @@ from product.api.v1.serializers import (
     ProductListSerializer, ProductDetailSerializer,
     ProductCreateSerializer, ProductUpdateSerializer,
     ColorSerializer, SizeSerializer,
-    MerchantOrderSerializer, OrderStatusUpdateSerializer,
 )
 
 

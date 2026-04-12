@@ -75,3 +75,44 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class CheckoutSerializer(serializers.Serializer):
     shipping_address = serializers.CharField()
+
+
+# --- Merchant order dashboard ---
+
+class MerchantOrderItemSerializer(serializers.ModelSerializer):
+    subtotal = serializers.ReadOnlyField()
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product_name', 'sku', 'price', 'quantity', 'subtotal']
+
+
+class MerchantOrderSerializer(serializers.ModelSerializer):
+    items = MerchantOrderItemSerializer(many=True, read_only=True)
+    buyer_email = serializers.ReadOnlyField(source='buyer.email')
+
+    class Meta:
+        model = Order
+        fields = ['id', 'buyer_email', 'status', 'shipping_address', 'total', 'items', 'created_at']
+
+
+class OrderStatusUpdateSerializer(serializers.Serializer):
+    VALID_TRANSITIONS = {
+        'pending':   ['confirmed', 'cancelled'],
+        'confirmed': ['shipped',   'cancelled'],
+        'shipped':   ['delivered'],
+        'delivered': [],
+        'cancelled': [],
+    }
+
+    status = serializers.ChoiceField(choices=Order.Status.choices)
+
+    def validate_status(self, value):
+        current = self.context['order'].status
+        allowed = self.VALID_TRANSITIONS.get(current, [])
+        if value not in allowed:
+            raise serializers.ValidationError(
+                f"Cannot transition from '{current}' to '{value}'. "
+                f"Allowed: {allowed or 'none'}."
+            )
+        return value
