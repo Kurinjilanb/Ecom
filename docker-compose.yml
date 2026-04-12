@@ -1,0 +1,57 @@
+version: '3.9'
+
+services: 
+  ecommerce:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${HOST_WEB_PORT}:${HOST_WEB_PORT}
+
+    command: sh -c "python manage.py migrate && honcho start"
+
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+
+    env_file: .env
+    image: ecommerce
+
+    environment:
+      - C_FORCE_ROOT=true
+      - DATABASE_HOST=ecommerce_db
+      - DATABASE_PORT=5432
+
+    restart: "on-failure"
+
+    depends_on:
+      - ecommerce_db
+      - ecommerce_redis
+
+  ecommerce_db:
+    image: postgres:15.3-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    restart: "on-failure"
+
+  ecommerce_redis:
+    image: redis:7.0-alpine
+    restart: "on-failure"
+    ports:
+      - ${HOST_REDIS_PORT}:${HOST_REDIS_PORT}
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: marketplace_mailpit
+    ports:
+      - "1025:1025" # SMTP Port (Django talks to this)
+      - "8025:8025" # Web Dashboard Port (You look at this)
+    restart: always
+
+volumes:
+  postgres_data:
+  static_volume:
